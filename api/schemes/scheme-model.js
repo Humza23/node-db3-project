@@ -1,5 +1,4 @@
 const db = require('../../data/db-config')
-const mid = require('./scheme-middleware')
 
 async function find() { // EXERCISE A
   /*

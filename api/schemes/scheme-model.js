@@ -27,33 +27,30 @@ async function find() { // EXERCISE A
 }
 
 async function findById(scheme_id) {
-  const rows = await db.select('sc.scheme_name', 'st.*')
+  const rows = await db.select('sc.scheme_name', 'st.*', 'sc.scheme_id')
     .from('schemes as sc')
     .leftJoin('steps as st', 'sc.scheme_id', '=', 'st.scheme_id')
     .where('sc.scheme_id', scheme_id)
-    .orderBy('st.step_number', 'asc')
+    .orderBy('st.step_number')
   
-    if (rows.step_number) {
-      return{
-        scheme_id: rows[0].scheme_id,
-        scheme_name: rows[0].scheme_name,
-        steps: [
-          rows.map(items => {
-            return {
-              step_id: items.step_id,
-              step_number: items.step_number,
-              instructions: items.instructions
-            }
-          })
-        ]
-      }
-    } else {
-      return {
-        scheme_id: rows[0].scheme_id,
-        scheme_name: rows[0].scheme_name,
-        steps: []
-      }
+
+    const result = {
+      scheme_id: rows[0].scheme_id,
+      scheme_name: rows[0].scheme_name,
+      steps: []
     }
+
+    rows.forEach(row => {
+      if (row.step_id) {
+        result.steps.push({
+          step_id: row.step_id,
+          step_number: row.step_number,
+          instructions: row.instructions
+        })
+      }
+    })
+    return result
+
   }
   // EXERCISE B
   /*
@@ -123,13 +120,19 @@ async function findById(scheme_id) {
   */
 
 
-function findSteps(scheme_id) {
-  return db.select('st.step_id', 'step_number', 'instructions', 'scheme_name')
+async function findSteps(scheme_id) {
+  const rows = await db.select('st.step_id', 'step_number', 'instructions', 'scheme_name')
     .from('schemes as sc')
     .leftJoin('steps as st', 'sc.scheme_id', '=', 'st.scheme_id')
     .where('sc.scheme_id', scheme_id)
-    .orderBy('st.step_number', 'asc')
+    .orderBy('st.step_number',)
 
+
+    if (!rows[0].step_number){
+      return []
+    } else {
+      return rows
+    }
 
   // SELECT st.step_id, step_number, instructions, scheme_name
   // FROM schemes as sc
@@ -163,6 +166,9 @@ function findSteps(scheme_id) {
 
 function add(scheme) { // EXERCISE D
   return db('schemes').insert(scheme)
+  .then(([scheme_id]) => {
+    return db('schemes').where('scheme_id', scheme_id).first()
+  })
   /*
     1D- This function creates a new scheme and resolves to _the newly created scheme_.
   */

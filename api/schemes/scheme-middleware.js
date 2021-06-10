@@ -1,4 +1,6 @@
 const Scheme = require('./scheme-model')
+const db = require('../../data/db-config')
+const e = require('express')
 /*
   If `scheme_id` does not exist in the database:
 
@@ -8,11 +10,16 @@ const Scheme = require('./scheme-model')
   }
 */
 const checkSchemeId = async (req, res, next) => {
-  const schemeId = await Scheme.findById(req.params.scheme_id)
-  if(!schemeId) {
+ const existing = await db('schemes')
+    .where('scheme_id', req.params.scheme_id)
+    .first()
+
+  if(!existing) {
     res.status(404).json({ message: `scheme with scheme_id ${req.params.scheme_id} not found` })
+    next()
+  } else {
+    next()
   }
-  next()
 }
 
 /*
@@ -24,10 +31,16 @@ const checkSchemeId = async (req, res, next) => {
   }
 */
 const validateScheme = (req, res, next) => {
-  if(req.body.scheme_name !== 'string') {
+  if(
+    req.body.scheme_name === undefined ||
+    typeof req.body.scheme_name !== 'string' ||
+    !req.body.scheme_name
+    ) {
     res.status(400).json({ message: 'invalid scheme_name'})
+    next()
+  } else {
+    next()
   }
-  next()
 }
 
 /*
@@ -40,12 +53,17 @@ const validateScheme = (req, res, next) => {
   }
 */
 const validateStep = (req, res, next) => {
-  if(!req.body.instructions || req.body.instructions === "" ||
+  if(
+  req.body.instructions === undefined ||
   typeof req.body.instructions !== 'string' ||
-  isNaN(req.body.step_number) || req.body.step_number < 1) {
+  !req.body.instructions ||
+  typeof req.body.step_number !== 'number' ||
+  req.body.step_number < 1) {
     res.status(400).json({ message: 'invalid step'})
+    next()
+  } else {
+    next()
   }
-  next()
 }
 
 module.exports = {
